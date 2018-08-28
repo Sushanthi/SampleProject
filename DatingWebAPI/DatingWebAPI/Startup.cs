@@ -10,6 +10,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
 using DatingWebAPI.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace DatingWebAPI
 {
@@ -27,6 +30,19 @@ namespace DatingWebAPI
         {
             services.AddDbContext<DataContext>(options => options.UseSqlServer(Configuration["ConnectionString:DatingDB"]));
             services.AddMvc();
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(Configuration.GetSection("AppSettings:Token").Value)),
+                        ValidateIssuer = false,
+                        ValidateAudience = false
+                    };
+                });
+            //AddSingleton creates single instance for the services and uses it across all req. Problem comes with concurrent req when using this
+            services.AddScoped<IAuthRepository, AuthRepository>(); //service are created once per request within scope. Similar to AddSingleton but within current scope.
             services.AddCors();
         }
 
@@ -40,6 +56,7 @@ namespace DatingWebAPI
             app.UseCors(x => x.AllowAnyOrigin()
                             .AllowAnyMethod()
                             .AllowAnyHeader());
+            app.UseAuthentication();
             app.UseMvc();
         }
     }
