@@ -16,8 +16,8 @@ export class NavComponent {
         this.authService.login(this.model)
         .subscribe(next => {
             console.log("logged in successfully")
-        }, err => {
-            console.log("failed to login");
+        }, error => {
+            console.log(error);
         })
     }
     loggedIn(){
